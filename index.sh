@@ -11,6 +11,7 @@ echo "📍 IPFS Hash: $IPFS_HASH"
 # Create the subgraph in the node
 echo "📦 Creating subgraph..."
 CREATE_RESULT=$(curl -s -X POST $GRAPH_NODE_URL \
+  -H 'Content-Type: application/json' \
   --data "{\"jsonrpc\":\"2.0\",\"method\":\"subgraph_create\",\"params\":{\"name\":\"$SUBGRAPH_NAME\"},\"id\":1}")
 
 if echo "$CREATE_RESULT" | grep -q "error"; then
@@ -22,6 +23,7 @@ fi
 # Deploy the subgraph using the IPFS hash
 echo "🚢 Deploying subgraph..."
 DEPLOY_RESULT=$(curl -s -X POST $GRAPH_NODE_URL \
+  -H 'Content-Type: application/json' \
   --data "{\"jsonrpc\":\"2.0\",\"method\":\"subgraph_deploy\",\"params\":{\"name\":\"$SUBGRAPH_NAME\",\"ipfs_hash\":\"$IPFS_HASH\"},\"id\":1}")
 
 if echo "$DEPLOY_RESULT" | grep -q "error"; then

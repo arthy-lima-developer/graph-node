@@ -2,7 +2,7 @@
 
 # Default values
 LOG_FILE="indexing_logs.txt"
-CMD="docker-compose logs --tail=100 -f graph-node"
+CMD="docker compose logs --tail=100 -f graph-node"
 
 show_help() {
     echo "Usage: ./logs.sh [options]"
@@ -15,7 +15,7 @@ show_help() {
 
 export_logs() {
     echo "💾 Exporting logs to $LOG_FILE..."
-    docker-compose logs graph-node > "$LOG_FILE"
+    docker compose logs graph-node > "$LOG_FILE"
     echo "✅ Logs exported to $(pwd)/$LOG_FILE"
     exit 0
 }
@@ -23,7 +23,7 @@ export_logs() {
 case "$1" in
     -e|--errors)
         echo "🧐 Showing error logs (follow mode)..."
-        docker-compose logs -f graph-node | grep -iE "error|fail|critical"
+        docker compose logs -f graph-node | grep -iE "error|fail|critical"
         ;;
     -x|--export)
         export_logs

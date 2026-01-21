@@ -1,0 +1,170 @@
+dataSources:
+  - kind: ethereum
+    mapping:
+      abis:
+        - file:
+            /: /ipfs/QmV86EVeviNNiGTKaPnsTSGfqrrMfkonTNbVPfpGunS4MZ
+          name: Creator
+        - file:
+            /: /ipfs/QmWGq5ERT8HA9PX8E7dxZMQBmPgAFFTHAJmYQtdngGsJrS
+          name: Aggregator
+      apiVersion: 0.0.7
+      entities:
+        - ProposalEntity
+      eventHandlers:
+        - event: 'AggregatorMetadataCreated(indexed address,string)'
+          handler: handleAggregatorCreated
+      file:
+        /: /ipfs/QmZeLTo7dzSZo6MDjn2JnS55rBoaSYK4ZS8KpdDHB9pfMS
+      kind: ethereum/events
+      language: wasm/assemblyscript
+    name: Creator
+    network: gnosis
+    source:
+      abi: Creator
+      address: '0xe7C27c932C80D30c9aaA30A856c0062208d269b4'
+      startBlock: 44225271
+  - kind: ethereum
+    mapping:
+      abis:
+        - file:
+            /: /ipfs/Qmev6Am6auQSauTzXSmxDTN5GiLH7z1C8hkVmsdNEGHore
+          name: OrganizationFactory
+        - file:
+            /: /ipfs/QmUv8bB8WVSqLk1vuDyPMFos5dWURdWR8EN1YRup8xxH7r
+          name: Organization
+      apiVersion: 0.0.7
+      entities:
+        - Organization
+      eventHandlers:
+        - event: 'OrganizationMetadataCreated(indexed address,string)'
+          handler: handleOrganizationMetadataCreated
+      file:
+        /: /ipfs/QmZeLTo7dzSZo6MDjn2JnS55rBoaSYK4ZS8KpdDHB9pfMS
+      kind: ethereum/events
+      language: wasm/assemblyscript
+    name: OrganizationFactory
+    network: gnosis
+    source:
+      abi: OrganizationFactory
+      address: '0xCF3d0A6d7d85639fb012fA711Fef7286e6Db2808'
+      startBlock: 44225271
+  - kind: ethereum
+    mapping:
+      abis:
+        - file:
+            /: /ipfs/QmPKwJtcWqvcxJn7k56mY6nuqB69fJeVGFGcseeBqdDhf8
+          name: ProposalMetadataFactory
+        - file:
+            /: /ipfs/QmPDDceiehfZSKBhVRJQ12Jh9zvcoTsgP8gPgHsUWrUJy9
+          name: Proposal
+      apiVersion: 0.0.7
+      entities:
+        - ProposalEntity
+      eventHandlers:
+        - event: 'ProposalMetadataCreated(indexed address,indexed address)'
+          handler: handleProposalMetadataCreated
+      file:
+        /: /ipfs/QmZeLTo7dzSZo6MDjn2JnS55rBoaSYK4ZS8KpdDHB9pfMS
+      kind: ethereum/events
+      language: wasm/assemblyscript
+    name: ProposalMetadataFactory
+    network: gnosis
+    source:
+      abi: ProposalMetadataFactory
+      address: '0x899c70C37E523C99Bd61993ca434F1c1A82c106d'
+      startBlock: 44225271
+schema:
+  file:
+    /: /ipfs/QmeJCNtDtLAhMwYC3cKs8fTcH2dX7M1vNQMLKEeTuYhTks
+specVersion: 0.0.5
+templates:
+  - kind: ethereum/contract
+    mapping:
+      abis:
+        - file:
+            /: /ipfs/QmWGq5ERT8HA9PX8E7dxZMQBmPgAFFTHAJmYQtdngGsJrS
+          name: Aggregator
+        - file:
+            /: /ipfs/QmUv8bB8WVSqLk1vuDyPMFos5dWURdWR8EN1YRup8xxH7r
+          name: Organization
+        - file:
+            /: /ipfs/QmPDDceiehfZSKBhVRJQ12Jh9zvcoTsgP8gPgHsUWrUJy9
+          name: Proposal
+      apiVersion: 0.0.7
+      entities: []
+      eventHandlers:
+        - event: OrganizationAdded(indexed address)
+          handler: handleOrganizationAdded
+        - event: 'OrganizationCreatedAndAdded(indexed address,string)'
+          handler: handleOrganizationCreatedAndAdded
+        - event: 'ExtendedMetadataUpdated(string,string)'
+          handler: handleAggregatorExtendedMetadataUpdated
+        - event: EditorSet(indexed address)
+          handler: handleAggregatorEditorSet
+        - event: EditorRevoked(indexed address)
+          handler: handleAggregatorEditorRevoked
+        - event: OrganizationRemoved(indexed address)
+          handler: handleOrganizationRemoved
+      file:
+        /: /ipfs/QmZeLTo7dzSZo6MDjn2JnS55rBoaSYK4ZS8KpdDHB9pfMS
+      kind: ethereum/events
+      language: wasm/assemblyscript
+    name: AggregatorTemplate
+    network: gnosis
+    source:
+      abi: Aggregator
+  - kind: ethereum/contract
+    mapping:
+      abis:
+        - file:
+            /: /ipfs/QmUv8bB8WVSqLk1vuDyPMFos5dWURdWR8EN1YRup8xxH7r
+          name: Organization
+        - file:
+            /: /ipfs/QmPDDceiehfZSKBhVRJQ12Jh9zvcoTsgP8gPgHsUWrUJy9
+          name: Proposal
+      apiVersion: 0.0.7
+      entities: []
+      eventHandlers:
+        - event: ProposalAdded(indexed address)
+          handler: handleProposalAdded
+        - event: 'ProposalCreatedAndAdded(indexed address,indexed address)'
+          handler: handleProposalCreatedAndAdded
+        - event: 'ExtendedMetadataUpdated(string,string)'
+          handler: handleOrganizationExtendedMetadataUpdated
+        - event: EditorSet(indexed address)
+          handler: handleOrganizationEditorSet
+        - event: EditorRevoked(indexed address)
+          handler: handleOrganizationEditorRevoked
+        - event: ProposalRemoved(indexed address)
+          handler: handleProposalRemoved
+      file:
+        /: /ipfs/QmZeLTo7dzSZo6MDjn2JnS55rBoaSYK4ZS8KpdDHB9pfMS
+      kind: ethereum/events
+      language: wasm/assemblyscript
+    name: OrganizationTemplate
+    network: gnosis
+    source:
+      abi: Organization
+  - kind: ethereum/contract
+    mapping:
+      abis:
+        - file:
+            /: /ipfs/QmPDDceiehfZSKBhVRJQ12Jh9zvcoTsgP8gPgHsUWrUJy9
+          name: Proposal
+      apiVersion: 0.0.7
+      entities:
+        - ProposalEntity
+      eventHandlers:
+        - event: 'MetadataUpdated(string,string,string)'
+          handler: handleProposalMetadataUpdated
+        - event: 'ExtendedMetadataUpdated(string,string)'
+          handler: handleProposalExtendedMetadataUpdated
+      file:
+        /: /ipfs/QmZeLTo7dzSZo6MDjn2JnS55rBoaSYK4ZS8KpdDHB9pfMS
+      kind: ethereum/events
+      language: wasm/assemblyscript
+    name: ProposalTemplate
+    network: gnosis
+    source:
+      abi: Proposal

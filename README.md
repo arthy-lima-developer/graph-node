@@ -5,8 +5,12 @@ Custom Graph Node setup for indexing subgraphs on Gnosis Chain.
 ## 🚀 Quick Start
 
 ### 1. Prerequisites
+- [Natively installed Docker](file:///home/arthur/graph-node/install-docker.sh) (Ubuntu/WSL).
 - Docker and Docker Compose installed.
 - Logged into GitHub via `gh auth login`.
+
+> [!TIP]
+> If you don't have Docker installed in WSL, run: `./install-docker.sh` and restart your terminal.
 
 ### 2. Startup
 Start the environment:
