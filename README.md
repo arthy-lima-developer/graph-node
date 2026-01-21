@@ -20,8 +20,13 @@ docker-compose up -d
 ```
 
 ### 3. Creating and Deploying Subgraph
-To manually create and deploy the subgraph using the IPFS hash:
 
+You can use the automated script:
+```bash
+./index.sh
+```
+
+Or manually:
 ```bash
 # Create the subgraph in the node
 curl -X POST http://localhost:8020/ --data '{"jsonrpc":"2.0","method":"subgraph_create","params":{"name":"custom/subgraph"},"id":1}'
