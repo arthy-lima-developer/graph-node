@@ -2,12 +2,7 @@
 
 Custom Graph Node setup for indexing subgraphs on Gnosis Chain.
 
-## Subgraph Info
-- **IPFS Hash:** `QmWi2sSCu1k4GkteaZKiyGkGEUJk5oo84DFF4UoHC14mPw`
-- **Network:** Gnosis Chain
-- **RPC:** `https://rpc.gnosischain.com`
-
-## Usage Guide
+## 🚀 Quick Start
 
 ### 1. Prerequisites
 - Docker and Docker Compose installed.
@@ -19,28 +14,57 @@ Start the environment:
 docker-compose up -d
 ```
 
-### 3. Creating and Deploying Subgraph
+### 3. Deploying Subgraphs
+You can deploy multiple subgraphs with different names and hashes.
 
-You can use the automated script:
+**Default deployment:** (futarchy-complete-new)
 ```bash
 ./index.sh
 ```
 
-Or manually:
+**Custom deployment:**
 ```bash
-# Create the subgraph in the node
-curl -X POST http://localhost:8020/ --data '{"jsonrpc":"2.0","method":"subgraph_create","params":{"name":"custom/subgraph"},"id":1}'
-
-# Deploy the subgraph using the IPFS hash
-curl -X POST http://localhost:8020/ --data '{"jsonrpc":"2.0","method":"subgraph_deploy","params":{"name":"custom/subgraph","ipfs_hash":"QmWi2sSCu1k4GkteaZKiyGkGEUJk5oo84DFF4UoHC14mPw"},"id":1}'
+./index.sh <subgraph-name> <ipfs-hash>
+# Example:
+./index.sh my-custom-subgraph QmWi2sSCu1k4GkteaZKiyGkGEUJk5oo84DFF4UoHC14mPw
 ```
 
-### 4. Monitoring Logs
-View logs for the graph-node service:
-```bash
-docker-compose logs -f graph-node
+---
+
+## 📊 Querying
+
+Once deployed, your subgraph is available at:
+
+- **GraphQL Endpoint:** `http://localhost:8000/subgraphs/name/<subgraph-name>`
+- **GraphiQL Interface:** `http://localhost:8000/subgraphs/name/<subgraph-name>/graphql`
+
+**Example Query:**
+```graphql
+{
+  _meta {
+    block {
+      number
+      hash
+    }
+    hasIndexingErrors
+  }
+}
 ```
 
-## Maintenance
+---
+
+## 🧐 Monitoring & Logs
+
+Use the `logs.sh` script to monitor indexing progress:
+
+- **Follow all logs:** `./logs.sh`
+- **Show errors only:** `./logs.sh --errors`
+- **Export logs to file:** `./logs.sh --export` (saves to `indexing_logs.txt`)
+
+---
+
+## 🛠 Maintenance
 - **Database:** Stored in `./postgres-data`
 - **IPFS:** Stored in `./ipfs-data`
+- **Reset everything:** `docker-compose down -v` (Warning: deletes all data)
+

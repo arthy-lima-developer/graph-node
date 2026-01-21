@@ -1,20 +1,35 @@
 #!/bin/bash
 
-# Configuration
+# Configuration with defaults
 GRAPH_NODE_URL="http://localhost:8020/"
-SUBGRAPH_NAME="custom/subgraph"
-IPFS_HASH="QmWi2sSCu1k4GkteaZKiyGkGEUJk5oo84DFF4UoHC14mPw"
+SUBGRAPH_NAME="${1:-futarchy-complete-new}"
+IPFS_HASH="${2:-QmWi2sSCu1k4GkteaZKiyGkGEUJk5oo84DFF4UoHC14mPw}"
 
 echo "🚀 Starting indexing for $SUBGRAPH_NAME..."
+echo "📍 IPFS Hash: $IPFS_HASH"
 
 # Create the subgraph in the node
 echo "📦 Creating subgraph..."
-curl -s -X POST $GRAPH_NODE_URL \
-  --data "{\"jsonrpc\":\"2.0\",\"method\":\"subgraph_create\",\"params\":{\"name\":\"$SUBGRAPH_NAME\"},\"id\":1}" | grep -q "error" && echo "⚠️ Subgraph might already exist or creation failed." || echo "✅ Subgraph created."
+CREATE_RESULT=$(curl -s -X POST $GRAPH_NODE_URL \
+  --data "{\"jsonrpc\":\"2.0\",\"method\":\"subgraph_create\",\"params\":{\"name\":\"$SUBGRAPH_NAME\"},\"id\":1}")
+
+if echo "$CREATE_RESULT" | grep -q "error"; then
+    echo "⚠️ Subgraph might already exist or creation failed. Result: $CREATE_RESULT"
+else
+    echo "✅ Subgraph created."
+fi
 
 # Deploy the subgraph using the IPFS hash
-echo "🚢 Deploying subgraph with hash: $IPFS_HASH..."
-curl -s -X POST $GRAPH_NODE_URL \
-  --data "{\"jsonrpc\":\"2.0\",\"method\":\"subgraph_deploy\",\"params\":{\"name\":\"$SUBGRAPH_NAME\",\"ipfs_hash\":\"$IPFS_HASH\"},\"id\":1}"
+echo "🚢 Deploying subgraph..."
+DEPLOY_RESULT=$(curl -s -X POST $GRAPH_NODE_URL \
+  --data "{\"jsonrpc\":\"2.0\",\"method\":\"subgraph_deploy\",\"params\":{\"name\":\"$SUBGRAPH_NAME\",\"ipfs_hash\":\"$IPFS_HASH\"},\"id\":1}")
 
-echo -e "\n✨ Deployment command sent. Check logs with: docker-compose logs -f graph-node"
+if echo "$DEPLOY_RESULT" | grep -q "error"; then
+    echo "❌ Deployment failed: $DEPLOY_RESULT"
+else
+    echo "✅ Deployment command sent successfully."
+    echo -e "\n📊 Query Endpoint: http://localhost:8000/subgraphs/name/$SUBGRAPH_NAME"
+    echo "🔍 GraphiQL: http://localhost:8000/subgraphs/name/$SUBGRAPH_NAME/graphql"
+fi
+
+echo -e "\n✨ Check logs with: ./logs.sh"
