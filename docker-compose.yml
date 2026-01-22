@@ -18,6 +18,7 @@ services:
       ipfs: 'ipfs:5001'
       ethereum: 'gnosis:https://rpc.gnosischain.com'
       GRAPH_LOG: info
+      GRAPH_GRAPHQL_HTTP_CORS: '*'
     restart: always
 
   ipfs:
