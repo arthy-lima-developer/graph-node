@@ -3,3 +3,14 @@ node_modules/
 postgres-data/
 ipfs-data/
 *.log
+
+# AWS CLI installer (don't commit these)
+aws/dist/
+aws/install
+awscliv2.zip
+
+# SSH keys (NEVER commit)
+*.pem
+
+# Temp/staging files
+ipfs-data/staging/

@@ -1,0 +1,146 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Graph Node Infrastructure - EC2 + CloudFront
+
+Parameters:
+  KeyPairName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: EC2 Key Pair for SSH access
+
+  InstanceType:
+    Type: String
+    Default: t3.medium
+    AllowedValues: [t3.small, t3.medium, t3.large]
+    Description: EC2 instance type
+
+  VolumeSize:
+    Type: Number
+    Default: 100
+    Description: EBS volume size in GB
+
+Resources:
+  # Security Group
+  GraphNodeSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Graph Node Security Group
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+          Description: SSH
+        - IpProtocol: tcp
+          FromPort: 8000
+          ToPort: 8000
+          CidrIp: 0.0.0.0/0
+          Description: GraphQL endpoint
+        - IpProtocol: tcp
+          FromPort: 8020
+          ToPort: 8020
+          CidrIp: 0.0.0.0/0
+          Description: JSON-RPC
+        - IpProtocol: tcp
+          FromPort: 8030
+          ToPort: 8030
+          CidrIp: 0.0.0.0/0
+          Description: Index status
+
+  # EC2 Instance
+  GraphNodeInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyPairName
+      ImageId: !Sub '{{resolve:ssm:/aws/service/canonical/ubuntu/server/22.04/stable/current/amd64/hvm/ebs-gp2/ami-id}}'
+      SecurityGroupIds:
+        - !Ref GraphNodeSecurityGroup
+      BlockDeviceMappings:
+        - DeviceName: /dev/sda1
+          Ebs:
+            VolumeSize: !Ref VolumeSize
+            VolumeType: gp3
+            DeleteOnTermination: true
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          set -e
+          
+          # Install Docker
+          curl -fsSL https://get.docker.com | sh
+          usermod -aG docker ubuntu
+          
+          # Install Docker Compose
+          apt-get update && apt-get install -y docker-compose-plugin
+          
+          # Clone Graph Node repo
+          cd /home/ubuntu
+          git clone https://github.com/arthy-lima-developer/graph-node.git
+          chown -R ubuntu:ubuntu graph-node
+          
+          # Create startup script
+          cat > /home/ubuntu/start-graph-node.sh << 'EOF'
+          #!/bin/bash
+          cd /home/ubuntu/graph-node
+          docker compose up -d
+          EOF
+          chmod +x /home/ubuntu/start-graph-node.sh
+          
+          # Start on boot
+          echo "@reboot /home/ubuntu/start-graph-node.sh" | crontab -u ubuntu -
+          
+          # Start now
+          cd /home/ubuntu/graph-node
+          sudo -u ubuntu docker compose up -d
+      Tags:
+        - Key: Name
+          Value: graph-node
+
+  # Elastic IP
+  GraphNodeEIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      InstanceId: !Ref GraphNodeInstance
+
+  # CloudFront Distribution
+  GraphNodeCloudFront:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        Comment: Graph Node CDN
+        DefaultCacheBehavior:
+          TargetOriginId: GraphNodeOrigin
+          ViewerProtocolPolicy: redirect-to-https
+          AllowedMethods: [GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE]
+          CachedMethods: [GET, HEAD]
+          CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad  # CachingDisabled
+          OriginRequestPolicyId: 216adef6-5c7f-47e4-b989-5492eafa07d3  # AllViewer
+          Compress: true
+        Origins:
+          - Id: GraphNodeOrigin
+            DomainName: !GetAtt GraphNodeInstance.PublicDnsName
+            CustomOriginConfig:
+              HTTPPort: 8000
+              OriginProtocolPolicy: http-only
+        PriceClass: PriceClass_100
+
+Outputs:
+  EC2PublicIP:
+    Description: EC2 Public IP
+    Value: !Ref GraphNodeEIP
+
+  EC2PublicDNS:
+    Description: EC2 Public DNS
+    Value: !GetAtt GraphNodeInstance.PublicDnsName
+
+  CloudFrontURL:
+    Description: CloudFront Distribution URL
+    Value: !Sub 'https://${GraphNodeCloudFront.DomainName}'
+
+  GraphQLEndpoint:
+    Description: GraphQL Endpoint via CloudFront
+    Value: !Sub 'https://${GraphNodeCloudFront.DomainName}/subgraphs/name/YOUR_SUBGRAPH'
+
+  SSHCommand:
+    Description: SSH Command
+    Value: !Sub 'ssh -i ${KeyPairName}.pem ubuntu@${GraphNodeEIP}'
