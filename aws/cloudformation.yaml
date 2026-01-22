@@ -69,8 +69,8 @@ Resources:
           curl -fsSL https://get.docker.com | sh
           usermod -aG docker ubuntu
           
-          # Install Docker Compose
-          apt-get update && apt-get install -y docker-compose-plugin
+          # Install Docker Compose and jq
+          apt-get update && apt-get install -y docker-compose-plugin jq
           
           # Clone Graph Node repo
           cd /home/ubuntu
@@ -104,6 +104,7 @@ Resources:
   # CloudFront Distribution
   GraphNodeCloudFront:
     Type: AWS::CloudFront::Distribution
+    DependsOn: GraphNodeEIP
     Properties:
       DistributionConfig:
         Enabled: true
@@ -118,7 +119,13 @@ Resources:
           Compress: true
         Origins:
           - Id: GraphNodeOrigin
-            DomainName: !GetAtt GraphNodeInstance.PublicDnsName
+            # Use Elastic IP DNS format: ec2-X-X-X-X.compute-1.amazonaws.com
+            DomainName: !Sub 
+              - 'ec2-${IP1}-${IP2}-${IP3}-${IP4}.compute-1.amazonaws.com'
+              - IP1: !Select [0, !Split ['.', !Ref GraphNodeEIP]]
+                IP2: !Select [1, !Split ['.', !Ref GraphNodeEIP]]
+                IP3: !Select [2, !Split ['.', !Ref GraphNodeEIP]]
+                IP4: !Select [3, !Split ['.', !Ref GraphNodeEIP]]
             CustomOriginConfig:
               HTTPPort: 8000
               OriginProtocolPolicy: http-only
