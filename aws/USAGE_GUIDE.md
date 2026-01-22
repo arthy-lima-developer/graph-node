@@ -188,6 +188,11 @@ If not, wait a minute and try:
 docker compose up -d
 ```
 
+Install jq (required for deploy script):
+```bash
+sudo apt-get update && sudo apt-get install -y jq
+```
+
 ---
 
 ## Step 12: Deploy Your Subgraph
