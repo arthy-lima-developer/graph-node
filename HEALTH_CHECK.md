@@ -43,8 +43,8 @@ The health check queries the `_meta` field of any Graph Protocol subgraph:
 ### Examples
 
 ```bash
-# Check your AWS deployment
-./health-check.sh https://d3ugkaojqkfud0.cloudfront.net/subgraphs/name/futarchy-complete-new-v1
+# Check your AWS deployment (use v3 - latest with null-safety fix)
+./health-check.sh https://d3ugkaojqkfud0.cloudfront.net/subgraphs/name/futarchy-complete-new-v3
 
 # Check The Graph Studio
 ./health-check.sh https://api.studio.thegraph.com/query/1718249/algebra-proposals-candles/version/latest
@@ -61,7 +61,7 @@ THRESHOLD_SECONDS=300 ./health-check.sh https://your-endpoint.com/subgraphs/name
 ║           SUBGRAPH HEALTH CHECK                              ║
 ╚══════════════════════════════════════════════════════════════╝
 
-📡 Endpoint: https://d3ugkaojqkfud0.cloudfront.net/subgraphs/name/futarchy-complete-new-v1
+📡 Endpoint: https://d3ugkaojqkfud0.cloudfront.net/subgraphs/name/futarchy-complete-new-v3
 ⏱️  Threshold: 90s
 
 📊 Results:
@@ -93,7 +93,7 @@ THRESHOLD_SECONDS=300 ./health-check.sh https://your-endpoint.com/subgraphs/name
 ```bash
 #!/bin/bash
 ENDPOINTS=(
-    "https://d3ugkaojqkfud0.cloudfront.net/subgraphs/name/futarchy-complete-new-v1"
+    "https://d3ugkaojqkfud0.cloudfront.net/subgraphs/name/futarchy-complete-new-v3"
     "https://d3ugkaojqkfud0.cloudfront.net/subgraphs/name/algebra-proposal-candles-v1"
 )
 
@@ -179,3 +179,109 @@ def check_subgraph_health(endpoint: str, threshold_seconds: int = 90) -> dict:
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `THRESHOLD_SECONDS` | 90 | Maximum acceptable lag in seconds |
+
+---
+
+## 📡 Deployed Endpoints (AWS)
+
+### CloudFront (HTTPS - Production)
+
+| Subgraph | Status | Endpoint |
+|----------|--------|----------|
+| `futarchy-complete-new-v3` | ✅ **RECOMMENDED** | `https://d3ugkaojqkfud0.cloudfront.net/subgraphs/name/futarchy-complete-new-v3` |
+| `futarchy-complete-new-v1` | ✅ Healthy | `https://d3ugkaojqkfud0.cloudfront.net/subgraphs/name/futarchy-complete-new-v1` |
+| `algebra-proposal-candles-v1` | ✅ Healthy | `https://d3ugkaojqkfud0.cloudfront.net/subgraphs/name/algebra-proposal-candles-v1` |
+| `futarchy-complete-new-v2` | ❌ Failed | `https://d3ugkaojqkfud0.cloudfront.net/subgraphs/name/futarchy-complete-new-v2` |
+
+### The Graph Studio
+
+| Subgraph | Endpoint |
+|----------|----------|
+| `futarchy-complete-new` (v0.0.15) | `https://api.studio.thegraph.com/query/1719045/futarchy-complete-new/0.0.15` |
+
+### Direct EC2 Access (HTTP)
+
+```bash
+# GraphQL Queries
+http://34.195.104.118:8000/subgraphs/name/<SUBGRAPH_NAME>
+
+# Indexing Status
+http://34.195.104.118:8030/graphql
+
+# JSON-RPC Deploy
+http://34.195.104.118:8020/
+```
+
+---
+
+## 🔧 Troubleshooting: v2 → v3 Migration
+
+### Problem: v2 Failed at Block 44,463,012
+
+**Error:**
+```
+Mapping aborted at src/mapping.ts, line 177, column 45, 
+with message: unexpected null in handler `handleOrganizationCreatedAndAdded`
+```
+
+**Root Cause:**
+The `CoW DAO` organization was created with `null` metadata. The mapping code used:
+```typescript
+entity.metadataProperties = extractKeys(entity.metadata as string)
+```
+This crashed when `entity.metadata` was `null` because AssemblyScript's `as string` cast doesn't handle nulls.
+
+**Transaction that triggered it:**
+- TX: `0x44fecb7bc03d767cab0cf78a0c4cab7ea8a5c26be372d31740f9ed675aa79721`
+- Block: `44,463,012` (Gnosis Chain)
+- Method: `createAndAddOrganizationMetadata("CoW DAO", ...)`
+
+### Solution: v3 Fix
+
+Fixed all 8 instances in `futarchy-complete/src/mapping.ts`:
+
+```typescript
+// Before (crashes on null):
+entity.metadataProperties = extractKeys(entity.metadata as string)
+
+// After (null-safe):
+entity.metadataProperties = extractKeys(
+  entity.metadata !== null ? changetype<string>(entity.metadata) : ""
+)
+```
+
+**Affected Handlers:**
+- `handleAggregatorCreated` (line 50)
+- `handleOrganizationMetadataCreated` (line 77)
+- `handleProposalMetadataCreated` (line 118)
+- `handleOrganizationCreatedAndAdded` (line 177) ← **The failure point**
+- `handleAggregatorExtendedMetadataUpdated` (line 196)
+- `handleProposalCreatedAndAdded` (line 268)
+- `handleOrganizationExtendedMetadataUpdated` (line 293)
+- `handleProposalExtendedMetadataUpdated` (line 343)
+
+### Deployment
+
+```bash
+# Deployed v3 to AWS Graph Node
+ssh -i graph-node-key.pem ubuntu@34.195.104.118 \
+  "cd graph-node && ./deploy.sh futarchy-complete-new-v3 QmTvu7WaFnXNfq8jjsPUtLWwsnzWRj2p9B3pWeaFnM7x3z"
+
+# Deployed to The Graph Studio
+npx graph deploy --node https://api.studio.thegraph.com/deploy/ \
+  --deploy-key <KEY> futarchy-complete-new --version-label 0.0.15
+```
+
+### Verification
+
+```bash
+# Check v3 health on CloudFront
+curl -s "https://d3ugkaojqkfud0.cloudfront.net/subgraphs/name/futarchy-complete-new-v3" \
+  -H 'Content-Type: application/json' \
+  -d '{"query":"{ _meta { block { number } hasIndexingErrors } }"}'
+
+# Check all subgraphs status
+curl -s "http://34.195.104.118:8030/graphql" \
+  -H 'Content-Type: application/json' \
+  -d '{"query":"{ indexingStatuses { subgraph synced health } }"}'
+```
